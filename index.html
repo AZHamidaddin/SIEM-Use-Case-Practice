@@ -1247,7 +1247,8 @@ const OPERATORS = [
   { v: 'regex', l: 'regex' },
   { v: 'greater_than', l: 'greater than (>)' },
   { v: 'less_than', l: 'less than (<)' },
-  { v: 'in', l: 'in (comma list)' },
+  { v: 'in', l: 'in (comma list, exact)' },
+  { v: 'contains_any', l: 'contains any (comma list)' },
 ];
 
 // ============================================================
@@ -1275,6 +1276,7 @@ function evaluateCondition(log, cond) {
     case 'greater_than': return Number(fv) > Number(cond.value);
     case 'less_than': return Number(fv) < Number(cond.value);
     case 'in': return cond.value.split(',').map(s => s.trim().toLowerCase()).includes(fvStr);
+    case 'contains_any': return cond.value.split(',').map(s => s.trim().toLowerCase()).filter(Boolean).some(v => fvStr.includes(v));
   }
   return false;
 }
